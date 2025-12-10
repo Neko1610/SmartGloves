@@ -1,0 +1,7 @@
+menu "Bootloader Brownout Fix"
+
+config BOOTLOADER_BROWNOUT_DETECTOR
+    bool "Brownout detector"
+    default n
+
+endmenu
