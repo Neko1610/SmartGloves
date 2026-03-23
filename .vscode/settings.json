@@ -57,6 +57,8 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "idf.openOcdConfigs": [
-    "board/esp32s3-builtin.cfg"
-  ]
+    "board/esp32c3-builtin.cfg"
+  ],
+  "cmake.sourceDirectory": "E:/BanTayThongMinh/BTTM",
+  "idf.currentSetup": "e:\\ESP\\v5.5.1\\esp-idf"
 }

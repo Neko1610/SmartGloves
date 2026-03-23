@@ -23,5 +23,6 @@
     "adc_oneshot.h": "c",
     "freertos.h": "c",
     "uart.h": "c"
-  }
+  },
+  "idf.currentSetup": "e:\\ESP\\v5.5.1\\esp-idf"
 }

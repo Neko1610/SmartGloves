@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_browser_client.dart';
-import 'package:typed_data/typed_buffers.dart';
-import 'dart:convert';
-import 'dart:js' as js;   // <-- Thêm để TTS
+import 'mqtt/mqtt_service.dart';
+import 'ui/display_panel.dart';
+import 'ui/suggestion_bar.dart';
 
 void main() {
   runApp(const SmartGloveApp());
@@ -18,284 +16,347 @@ class SmartGloveApp extends StatefulWidget {
 }
 
 class _SmartGloveAppState extends State<SmartGloveApp> {
-  final String broker = "ws://broker.hivemq.com:8000/mqtt";
-  final String clientId = "flutter_glove_web_001";
 
-  late MqttBrowserClient client;
+  final mqtt = MqttService();
 
-  String connectionStatus = "Offline";
-  String displayText = ""; 
-  String selectedLetter = "A";
+  String text = "";
+  String lastGesture = "";
 
-  List<String> dictionary = [];
   List<String> suggestions = [];
+  List<String> dictionary = [];
 
-  List<String> letters = [
-    "A","B","C","D","E","F","G","H","I","J","K","L","M",
-    "N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-    "(space)"
-  ];
+  /// chữ đã train
+  List<String> trainedLetters = [];
+
+  /// chữ đang train
+  Set<String> training = {};
+
+  List<String> allLetters =
+      List.generate(26,(i)=>String.fromCharCode(65+i));
 
   @override
   void initState() {
     super.initState();
+
     loadDictionary();
-    _connectMqtt();
+
+    mqtt.connect(
+
+      /// nhận gesture
+      onGesture: (g) {
+
+        if(g == lastGesture) return;
+
+        lastGesture = g;
+
+        setState(() {
+
+          text += (g == "SPACE") ? " " : g;
+
+          updateSuggestions();
+
+        });
+
+      },
+
+      /// train xong
+      onTrain: (letter) {
+
+        setState(() {
+
+          training.remove(letter);
+
+          if(!trainedLetters.contains(letter)){
+            trainedLetters.add(letter);
+          }
+
+        });
+
+      },
+      onTrainList: (letters) {
+        setState((){
+          trainedLetters =letters;
+        });
+      },
+    );
+   
   }
 
-  // LOAD DICTIONARY
-  Future<void> loadDictionary() async {
-    final text = await rootBundle.loadString("assets/dictionary.txt");
-    dictionary = text
+  /// load dictionary
+  Future loadDictionary() async {
+
+    final data = await rootBundle.loadString("assets/dictionary.txt");
+
+    dictionary = data
         .split("\n")
-        .map((e) => e.trim())
-        .where((e) => e.isNotEmpty)
+        .map((e)=>e.trim().toLowerCase())
         .toList();
-    setState(() {});
+
   }
 
-  // UPDATE SUGGESTIONS
-  void updateSuggestions() {
-    if (displayText.isEmpty) {
-      suggestions = [];
-      setState(() {});
-      return;
-    }
+  /// suggestion
+  void updateSuggestions(){
 
-    String lastWord = displayText.split(" ").last.toLowerCase();
-    if (lastWord.isEmpty) {
-      suggestions = [];
-      setState(() {});
+    String lastWord = text.trim().split(" ").last.toLowerCase();
+
+    if(lastWord.isEmpty){
+      suggestions=[];
       return;
     }
 
     suggestions = dictionary
-        .where((w) => w.startsWith(lastWord))
+        .where((w)=>w.startsWith(lastWord))
         .take(3)
         .toList();
 
-    setState(() {});
   }
 
-  // MQTT CONNECT
-  Future<void> _connectMqtt() async {
-    client = MqttBrowserClient(broker, clientId);
-    client.port = 8000;
-    client.websocketProtocols = MqttClientConstants.protocolsMultipleDefault;
+  /// nhận dạng
+  void recognize(){
 
-    client.onConnected = () => setState(() => connectionStatus = "Online");
-    client.onDisconnected = () => setState(() => connectionStatus = "Offline");
+    mqtt.publish("glove/recognize","1");
 
-    final connMsg = MqttConnectMessage().withClientIdentifier(clientId).startClean();
-    client.connectionMessage = connMsg;
-
-    try {
-      await client.connect();
-      _subscribe();
-    } catch (e) {
-      print("MQTT ERROR: $e");
-    }
   }
 
-  // SUBSCRIBE
-  void _subscribe() {
-    client.subscribe("glove/recognize_result", MqttQos.atLeastOnce);
-    client.subscribe("glove/train_result", MqttQos.atLeastOnce);
+  /// train
+  void train(String letter){
 
-    client.updates!.listen((messages) {
-      final msg = messages[0].payload as MqttPublishMessage;
-      final payload = MqttPublishPayload.bytesToStringAsString(msg.payload.message);
-
-      try {
-        final data = jsonDecode(payload);
-
-        if (data["gesture"] != null) {
-          String letter = data["gesture"];
-          if (letter == "?") return;
-
-          setState(() => displayText += letter);
-          updateSuggestions();
-        }
-      } catch (_) {}
+    setState(() {
+      training.add(letter);
     });
+
+    mqtt.train(letter);
+
   }
 
-  // TRAIN
-  void sendTrain() {
-    String value = (selectedLetter == "(space)") ? " " : selectedLetter;
-    final msg = Uint8Buffer()..addAll(value.codeUnits);
-    client.publishMessage("glove/train", MqttQos.atLeastOnce, msg);
+  /// delete 1
+  void deleteOne(){
+
+    if(text.isEmpty) return;
+
+    setState(() {
+      text = text.substring(0,text.length-1);
+    });
+
   }
 
-  // RECOGNIZE
-  void sendRecognize() {
-    final msg = Uint8Buffer()..addAll("1".codeUnits);
-    client.publishMessage("glove/recognize", MqttQos.atLeastOnce, msg);
+  /// delete all
+  void deleteAll(){
+
+    setState(() {
+      text="";
+      suggestions=[];
+    });
+
   }
 
-  // 🔊 TTS - GIỌNG NỮ GOOGLE (vi-VN)
-  void speakText() {
-    if (displayText.isEmpty) return;
+  /// chọn suggestion
+  void applySuggestion(String word){
 
-    js.context.callMethod("eval", ["""
-      var msg = new SpeechSynthesisUtterance("$displayText");
-      msg.lang = "vi-VN";
-      msg.voice = speechSynthesis.getVoices().find(v => v.lang === "vi-VN" && v.name.toLowerCase().includes("female"));
-      msg.rate = 1;
-      msg.pitch = 1;
-      speechSynthesis.speak(msg);
-    """]);
+    List parts=text.split(" ");
+
+    parts.removeLast();
+    parts.add(word);
+
+    setState(() {
+
+      text=parts.join(" ")+" ";
+
+      suggestions=[];
+
+    });
+
   }
 
-  // UI
   @override
   Widget build(BuildContext context) {
+
+    List<String> untrained =
+        allLetters.where((l)=>!trainedLetters.contains(l)).toList();
+
     return MaterialApp(
-      home: Scaffold(
-        backgroundColor: const Color(0xFF181818),
 
-        appBar: AppBar(
-          backgroundColor: Colors.black,
-          title: const Text("Smart Glove"),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                connectionStatus,
-                style: TextStyle(
-                  color: connectionStatus == "Online" ? Colors.green : Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            )
-          ],
-        ),
+      debugShowCheckedModeBanner:false,
 
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // DISPLAY + TTS + DELETE
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 120,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        displayText.isEmpty ? "-" : displayText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+      home:Scaffold(
 
-                  const SizedBox(width: 10),
+        backgroundColor:Colors.white,
 
-                  // 🔊 NÚT LOA — ĐỌC GIỌNG NỮ GOOGLE
-                  IconButton(
-                    onPressed: speakText,
-                    icon: const Icon(Icons.volume_up, color: Colors.white, size: 34),
-                  ),
+        appBar:AppBar(
 
-                  const SizedBox(width: 5),
+          backgroundColor:Colors.white,
+          elevation:1,
 
-                  // ❌ XOÁ 1 KÝ TỰ hoặc XOÁ HẾT
-                  GestureDetector(
-                    onTap: () {
-                      if (displayText.isNotEmpty) {
-                        setState(() {
-                          displayText = displayText.substring(0, displayText.length - 1);
-                        });
-                        updateSuggestions();
-                      }
-                    },
-                    onLongPress: () {
-                      setState(() {
-                        displayText = "";
-                        suggestions = [];
-                      });
-                    },
-                    child: const Icon(Icons.close, color: Colors.white, size: 30),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              // 3 GỢI Ý
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: suggestions.map((word) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        List<String> parts = displayText.split(" ");
-                        parts.removeLast();
-                        parts.add(word);
-                        displayText = parts.join(" ") + " ";
-
-                        setState(() {});
-                        updateSuggestions();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[800],
-                        foregroundColor: Colors.white,
-                      ),
-                      child: Text(word),
-                    ),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 25),
-
-              _button("Nhận dạng", sendRecognize),
-
-              const SizedBox(height: 25),
-
-              // TRAIN SELECT
-              DropdownButton<String>(
-                value: selectedLetter,
-                dropdownColor: Colors.black,
-                style: const TextStyle(color: Colors.white, fontSize: 20),
-                items: letters.map((e) {
-                  return DropdownMenuItem(
-                    value: e,
-                    child: Text(e == "(space)" ? "␣ SPACE" : e),
-                  );
-                }).toList(),
-                onChanged: (v) => setState(() => selectedLetter = v!),
-              ),
-
-              const SizedBox(height: 15),
-
-              _button("Train ký tự: $selectedLetter", sendTrain),
-            ],
+          title:const Text(
+            "Smart Glove",
+            style:TextStyle(color:Colors.black),
           ),
+
         ),
+
+        body:Padding(
+
+          padding:const EdgeInsets.all(20),
+
+          child:SingleChildScrollView(
+
+            child:Column(
+
+              crossAxisAlignment:CrossAxisAlignment.start,
+
+              children:[
+
+                /// display
+                DisplayPanel(
+                  text:text,
+                  onDeleteOne:deleteOne,
+                  onDeleteAll:deleteAll,
+                ),
+
+                const SizedBox(height:10),
+
+                /// suggestion
+                SuggestionBar(
+                  suggestions:suggestions,
+                  onTap:applySuggestion,
+                ),
+
+                const SizedBox(height:20),
+
+                /// recognize
+                ElevatedButton(
+
+                  style:ElevatedButton.styleFrom(
+                    backgroundColor:Colors.blue,
+                    padding:const EdgeInsets.symmetric(
+                      horizontal:40,
+                      vertical:15,
+                    ),
+                  ),
+
+                  onPressed:recognize,
+
+                  child:const Text(
+                    "NHẬN DẠNG",
+                    style:TextStyle(fontSize:18),
+                  ),
+
+                ),
+
+                const SizedBox(height:25),
+
+                /// CHƯA TRAIN
+                const Text(
+                  "CHƯA TRAIN",
+                  style:TextStyle(
+                    fontSize:16,
+                    fontWeight:FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height:10),
+
+                Wrap(
+
+                  spacing:8,
+                  runSpacing:8,
+
+                  children:untrained.map((l){
+
+                    bool loading = training.contains(l);
+
+                    return ElevatedButton(
+
+                      style:ElevatedButton.styleFrom(
+                        backgroundColor:Colors.grey,
+                      ),
+
+                      onPressed:(){
+                        if(!loading){
+                          train(l);
+                        }
+                      },
+
+                      child:loading
+                          ? const SizedBox(
+                              width:16,
+                              height:16,
+                              child:CircularProgressIndicator(
+                                strokeWidth:2,
+                                color:Colors.white,
+                              ),
+                            )
+                          : Text(l),
+
+                    );
+
+                  }).toList(),
+
+                ),
+
+                const SizedBox(height:15),
+
+                /// SPACE
+                if(!trainedLetters.contains("SPACE"))
+                ElevatedButton(
+                  style:ElevatedButton.styleFrom(
+                    backgroundColor:Colors.orange,
+                  ),
+                  onPressed:(){
+                    train("SPACE");
+                  },
+                  child:const Text("SPACE"),
+                ),
+
+                const SizedBox(height:25),
+
+                /// ĐÃ TRAIN
+                const Text(
+                  "ĐÃ TRAIN",
+                  style:TextStyle(
+                    fontSize:16,
+                    fontWeight:FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height:10),
+
+                Wrap(
+
+                  spacing:8,
+
+                  children:trainedLetters.map((l){
+
+                    return AnimatedContainer(
+
+                      duration:const Duration(milliseconds:300),
+
+                      child:Chip(
+
+                       label:Text(l),
+
+                        backgroundColor:Colors.green,
+
+                      ),
+
+                    );
+
+                  }).toList(),
+
+                ),
+
+              ],
+
+            ),
+
+          ),
+
+        ),
+
       ),
+
     );
+
   }
 
-  Widget _button(String label, VoidCallback action) {
-    return ElevatedButton(
-      onPressed: action,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        minimumSize: const Size(double.infinity, 45),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-      ),
-      child: Text(label, style: const TextStyle(fontSize: 18)),
-    );
-  }
 }
