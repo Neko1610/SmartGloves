@@ -113,6 +113,6 @@ python detect.py
 
 Nguyễn Gia Bảo
 
-* GitHub: https://github.com/your-github
+* GitHub: https://github.com/Neko1610
 
 ---
