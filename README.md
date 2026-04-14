@@ -49,34 +49,10 @@ It enables real-time recognition of hand signs using both image and sensor data.
 
 ```id="espfull"
 YOLO/
-├── train_classify.py
-├── detect.py
-├── data.py
-├── models/
-├── sample_images/
+├── train.py
+├── yolo.py
+├── chupdata.py
 ├── README.md
-```
-
----
-
-## ▶️ How to Run
-
-### 1. Install dependencies
-
-```id="run1"
-pip install ultralytics opencv-python paho-mqtt
-```
-
-### 2. Train model
-
-```id="run2"
-python train_classify.py
-```
-
-### 3. Run detection
-
-```id="run3"
-python detect.py
 ```
 
 ---
