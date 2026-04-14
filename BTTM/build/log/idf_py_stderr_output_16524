@@ -1,0 +1,14 @@
+Command: cmake -G Ninja -DPYTHON_DEPS_CHECKED=1 -DPYTHON=e:\ESP\Directory\python_env\idf5.5_py3.11_env\Scripts\python.exe -DESP_PLATFORM=1 -DCCACHE_ENABLE=1 E:\BanTayThongMinh\BTTM
+CMake Error at E:/ESP/v5.5.1/esp-idf/tools/cmake/build.cmake:629 (message):
+  WARNING: Component "espressif/esp_https_ota" not found
+
+  WARNING: Component "espressif/esp_https_ota" not found
+
+  ERROR: Because project depends on espressif/esp_https_ota (*) which doesn't
+  match any versions, version solving failed.
+
+Call Stack (most recent call first):
+  E:/ESP/v5.5.1/esp-idf/tools/cmake/project.cmake:740 (idf_build_process)
+  CMakeLists.txt:8 (project)
+
+

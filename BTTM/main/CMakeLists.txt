@@ -12,4 +12,5 @@ idf_component_register(
         esp_netif      # network interface
         mqtt           # MQTT client
         nvs_flash      # lưu cấu hình WiFi
+        esp_https_ota
 )

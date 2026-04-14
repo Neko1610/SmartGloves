@@ -1,47 +1,41 @@
 import 'package:flutter/material.dart';
 
 class SuggestionBar extends StatelessWidget {
-
   final List<String> suggestions;
-  final Function(String) onTap;
+  final Function(String) onSelect;
 
   const SuggestionBar({
     super.key,
     required this.suggestions,
-    required this.onTap
+    required this.onSelect,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (suggestions.isEmpty) return const SizedBox();
 
-    if(suggestions.isEmpty) return const SizedBox();
-
-    return Row(
-
-      mainAxisAlignment:MainAxisAlignment.center,
-
-      children:suggestions.map((word){
-
-        return Padding(
-
-          padding:const EdgeInsets.symmetric(horizontal:5),
-
-          child:ElevatedButton(
-
-            onPressed:(){
-
-              onTap(word);
-
-            },
-
-            child:Text(word),
-
+    return Wrap(
+      spacing: 8,
+      children: suggestions.map((word) {
+        return GestureDetector(
+          onTap: () => onSelect(word),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00F2FF).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              word,
+              style: const TextStyle(
+                color: Color(0xFF00F2FF),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-
         );
-
       }).toList(),
-
     );
   }
 }

@@ -1,90 +1,79 @@
 import 'package:flutter/material.dart';
 
 class DisplayPanel extends StatelessWidget {
-
   final String text;
-  final VoidCallback onDeleteOne;
-  final VoidCallback onDeleteAll;
+  final Function() onDeleteOne;
+  final Function() onClearAll;
 
   const DisplayPanel({
     super.key,
     required this.text,
     required this.onDeleteOne,
-    required this.onDeleteAll
+    required this.onClearAll,
   });
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
-
-      width:double.infinity,
-      padding:const EdgeInsets.all(20),
-
-      decoration:BoxDecoration(
-
-        color:Colors.white,
-
-        border:Border.all(
-          color:Colors.black,
-          width:2,
-        ),
-
-        borderRadius:BorderRadius.circular(10),
-
+      width: double.infinity, // 🔥 full ngang
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
 
-      child:Row(
-
-        mainAxisAlignment:MainAxisAlignment.spaceBetween,
-
-        children:[
-
-          Expanded(
-
-            child:Text(
-              text,
-              style:const TextStyle(
-                fontSize:28,
-                color:Colors.black,
+          /// 🔤 TITLE + BUTTON
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Recognized Output",
+                style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
-            ),
 
+              /// ❌ DELETE BUTTON
+              GestureDetector(
+                onTap: onDeleteOne, // xóa 1 chữ
+                onLongPress: onClearAll, // giữ để xóa hết
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.backspace,
+                    color: Colors.red,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
           ),
 
-          GestureDetector(
+          const SizedBox(height: 12),
 
-            onTap:onDeleteOne,
-            onLongPress:onDeleteAll,
-
-            child:Container(
-
-              padding:const EdgeInsets.symmetric(
-                horizontal:15,
-                vertical:8,
+          /// 🧠 TEXT OUTPUT
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 80),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: Text(
+                text.isEmpty ? "..." : text,
+                style: const TextStyle(
+                  fontSize: 32,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
               ),
-
-              decoration:BoxDecoration(
-
-                color:Colors.red,
-                borderRadius:BorderRadius.circular(20),
-
-              ),
-
-              child:const Text(
-                "Delete",
-                style:TextStyle(color:Colors.white),
-              ),
-
             ),
-
-          )
-
+          ),
         ],
-
       ),
-
     );
-
   }
 }
