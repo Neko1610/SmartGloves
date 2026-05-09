@@ -18,7 +18,7 @@ class DisplayPanel extends StatelessWidget {
       width: double.infinity, // 🔥 full ngang
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.grey[100],
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -31,7 +31,7 @@ class DisplayPanel extends StatelessWidget {
             children: [
               const Text(
                 "Recognized Output",
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+               
               ),
 
               /// ❌ DELETE BUTTON
@@ -66,7 +66,7 @@ class DisplayPanel extends StatelessWidget {
                 text.isEmpty ? "..." : text,
                 style: const TextStyle(
                   fontSize: 32,
-                  color: Colors.white,
+                  color: Colors.black,
                   letterSpacing: 2,
                 ),
               ),

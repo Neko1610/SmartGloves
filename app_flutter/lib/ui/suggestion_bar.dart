@@ -29,7 +29,7 @@ class SuggestionBar extends StatelessWidget {
             child: Text(
               word,
               style: const TextStyle(
-                color: Color(0xFF00F2FF),
+                color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
             ),

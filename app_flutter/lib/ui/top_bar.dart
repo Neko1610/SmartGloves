@@ -12,12 +12,12 @@ class TopBar extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.bluetooth, color: Color(0xFF00F2FF)),
+              Icon(Icons.bluetooth, color: Colors.black54),
               SizedBox(width: 8),
               Text(
                 "SMART GLOVE",
                 style: TextStyle(
-                  color: Color(0xFF00F2FF),
+                  color: Colors.black,
                   letterSpacing: 2,
                   fontWeight: FontWeight.bold,
                 ),
@@ -26,7 +26,7 @@ class TopBar extends StatelessWidget {
           ),
           Row(
             children: [
-              Icon(Icons.wifi, color: Colors.grey[400]),
+              Icon(Icons.wifi, color: Colors.black54),
               const SizedBox(width: 8),
               Container(
                 width: 8,
