@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vibration/vibration.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -11,24 +12,35 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState
     extends State<SettingsScreen> {
 
-  bool autoRecognize = true;
-
   bool vibration = true;
 
-  double threshold = 60;
+  Future<void> testVibration() async {
+
+    bool? hasVibrator =
+        await Vibration.hasVibrator();
+
+    if (hasVibrator == true) {
+
+      Vibration.vibrate(
+        duration: 120,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
 
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey.shade100,
 
       appBar: AppBar(
 
         title: const Text(
           "Settings",
         ),
+
+        centerTitle: true,
 
         backgroundColor: Colors.white,
 
@@ -46,7 +58,7 @@ class _SettingsScreenState
 
           children: [
 
-            /// CONNECTION
+            /// STATUS
             Container(
 
               padding: const EdgeInsets.all(20),
@@ -84,7 +96,7 @@ class _SettingsScreenState
                     children: const [
 
                       Text(
-                        "ESP32 Status",
+                        "ESP32 + MQTT",
 
                         style: TextStyle(
                           fontSize: 18,
@@ -93,24 +105,68 @@ class _SettingsScreenState
                         ),
                       ),
 
-                      SizedBox(height: 6),
+                      SizedBox(height: 10),
 
-                      Text(
-                        "Connected",
-                        style: TextStyle(
-                          color: Colors.green,
-                        ),
+                      Row(
+                        children: [
+
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 18,
+                          ),
+
+                          SizedBox(width: 8),
+
+                          Text(
+                            "ESP32 Connected",
+
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight:
+                                  FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 8),
+
+                      Row(
+                        children: [
+
+                          Icon(
+                            Icons.cloud_done,
+                            color: Colors.green,
+                            size: 18,
+                          ),
+
+                          SizedBox(width: 8),
+
+                          Text(
+                            "MQTT Connected",
+
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight:
+                                  FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
 
                   Container(
-                    width: 14,
-                    height: 14,
+
+                    width: 16,
+                    height: 16,
 
                     decoration:
                         const BoxDecoration(
+
                       color: Colors.green,
+
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -120,7 +176,7 @@ class _SettingsScreenState
 
             const SizedBox(height: 20),
 
-            /// AUTO RECOGNIZE
+            /// VIBRATION
             Container(
 
               padding: const EdgeInsets.all(20),
@@ -149,33 +205,12 @@ class _SettingsScreenState
 
                   SwitchListTile(
 
-                    value: autoRecognize,
-
-                    activeColor: Colors.green,
-
-                    title: const Text(
-                      "Auto Recognize",
-                    ),
-
-                    subtitle: const Text(
-                      "Tự động nhận dạng cử chỉ",
-                    ),
-
-                    onChanged: (v){
-
-                      setState(() {
-                        autoRecognize = v;
-                      });
-                    },
-                  ),
-
-                  const Divider(),
-
-                  SwitchListTile(
-
                     value: vibration,
 
                     activeColor: Colors.green,
+
+                    contentPadding:
+                        EdgeInsets.zero,
 
                     title: const Text(
                       "Vibration",
@@ -188,90 +223,46 @@ class _SettingsScreenState
                     onChanged: (v){
 
                       setState(() {
+
                         vibration = v;
                       });
-                    },
-                  ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 20),
+                      if (v) {
 
-            /// THRESHOLD
-            Container(
-
-              padding: const EdgeInsets.all(20),
-
-              decoration: BoxDecoration(
-
-                color: Colors.white,
-
-                borderRadius:
-                    BorderRadius.circular(24),
-
-                boxShadow: [
-
-                  BoxShadow(
-                    color: Colors.black
-                        .withOpacity(0.05),
-
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-
-              child: Column(
-
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-
-                children: [
-
-                  const Text(
-
-                    "Recognition Threshold",
-
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight:
-                          FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Slider(
-
-                    value: threshold,
-
-                    min: 0,
-
-                    max: 100,
-
-                    activeColor: Colors.green,
-
-                    onChanged: (v){
-
-                      setState(() {
-                        threshold = v;
-                      });
+                        testVibration();
+                      }
                     },
                   ),
 
-                  Center(
-                    child: Text(
+                  const Divider(),
 
-                      "${threshold.toInt()}%",
+                  ListTile(
 
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight:
-                            FontWeight.bold,
+                    contentPadding:
+                        EdgeInsets.zero,
 
-                        color: Colors.green,
-                      ),
+                    leading: const Icon(
+                      Icons.vibration,
+                      color: Colors.green,
                     ),
+
+                    title: const Text(
+                      "Test Vibration",
+                    ),
+
+                    subtitle: const Text(
+                      "Kiểm tra rung thiết bị",
+                    ),
+
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios,
+                      size: 18,
+                    ),
+
+                    onTap: () {
+
+                      testVibration();
+                    },
                   ),
                 ],
               ),
@@ -320,16 +311,58 @@ class _SettingsScreenState
                     ),
                   ),
 
-                  SizedBox(height: 12),
+                  SizedBox(height: 14),
 
-                  Text(
-                    "Smart Glove v1.0",
+                  Row(
+                    children: [
+
+                      Icon(
+                        Icons.smart_toy,
+                        color: Colors.green,
+                      ),
+
+                      SizedBox(width: 10),
+
+                      Text(
+                        "Smart Glove v1.0",
+                      ),
+                    ],
                   ),
 
-                  SizedBox(height: 6),
+                  SizedBox(height: 12),
 
-                  Text(
-                    "ESP32 + MPU6050 + Flex Sensor",
+                  Row(
+                    children: [
+
+                      Icon(
+                        Icons.memory,
+                        color: Colors.green,
+                      ),
+
+                      SizedBox(width: 10),
+
+                      Text(
+                        "ESP32 + MPU6050 + Flex Sensor",
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: 12),
+
+                  Row(
+                    children: [
+
+                      Icon(
+                        Icons.code,
+                        color: Colors.green,
+                      ),
+
+                      SizedBox(width: 10),
+
+                      Text(
+                        "Flutter + MQTT + ESP-IDF",
+                      ),
+                    ],
                   ),
                 ],
               ),

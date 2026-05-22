@@ -60,5 +60,6 @@
     "board/esp32c3-builtin.cfg"
   ],
   "cmake.sourceDirectory": "E:/BanTayThongMinh/BTTM",
-  "idf.currentSetup": "e:\\ESP\\v5.5.1\\esp-idf"
+  "idf.currentSetup": "e:\\ESP\\v5.5.1\\esp-idf",
+  "java.configuration.updateBuildConfiguration": "automatic"
 }

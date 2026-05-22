@@ -444,7 +444,6 @@ esp_err_t get_angles(float *pitch, float *roll)
     float raw_roll = atan2f(ac.acce_y, ac.acce_z) * RAD_TO_DEG;
     float raw_pitch = atanf(-ac.acce_x / denom) * RAD_TO_DEG;
 
-    // 🔥 FIX TRỤC (QUAN TRỌNG)
     raw_roll = -raw_roll;
     static bool initialized = false;
     static float last_roll = 0;
@@ -480,8 +479,8 @@ void train_letter(char L)
     float totalPitch = 0;
     float totalRoll = 0;
 
-    int rounds = 5;      // train 5 lần
-    int samples = 40;    // mỗi lần lấy 40 mẫu
+    int rounds = 5;   // train 5 lần
+    int samples = 40; // mỗi lần lấy 40 mẫu
 
     ESP_LOGI(TAG, "=== TRAIN %c START ===", L);
 
@@ -559,7 +558,7 @@ void train_letter(char L)
     model[id].roll = totalRoll / rounds;
 
     model[id].trained = 1;
-
+    save_model();
     ESP_LOGI(TAG,
              "FINAL TRAINED %c | f=[%.2f %.2f %.2f %.2f %.2f] p=%.1f r=%.1f",
              L,
@@ -577,7 +576,7 @@ char recognize_letter()
     float f[5] = {0};
 
     // ===== FLEX: lấy trung bình =====
-    for (int t = 0; t < 4; t++)   // 10 -> 4
+    for (int t = 0; t < 4; t++) // 10 -> 4
     {
         for (int i = 0; i < 5; i++)
         {
@@ -686,7 +685,7 @@ char recognize_letter()
     ESP_LOGI("RESULT", "best=%d diff=%.3f", best, bestDiff);
 
     // ===== threshold =====
-    if (bestDiff > 8.0f) // 5 -> 8
+    if (bestDiff > 10.0f) // 5 -> 8
         return '?';
 
     if (best < 0)
@@ -816,35 +815,17 @@ void recognize_task(void *arg)
         }
         else
         {
-            stable_count = 0;
+            stable_count = 1;
             last_detect = g;
         }
 
-        if (stable_count < 3)
+        if (stable_count < 2)
         {
             vTaskDelay(pdMS_TO_TICKS(40));
             continue;
         }
 
         char final = g;
-
-        // // 🔥 DEMO MODE: ép theo thứ tự
-        // if (demo_mode)
-        // {
-        //     char expected = demo_sequence[demo_index];
-
-        //     if (final != expected)
-        //     {
-        //         ESP_LOGI(TAG, "WAITING FOR %c", expected);
-        //         vTaskDelay(pdMS_TO_TICKS(40));
-        //         continue;
-        //     }
-
-        //     demo_index++;
-
-        //     if (demo_index >= 26)
-        //         demo_index = 0;
-        // }
 
         if (final != last_sent)
         {

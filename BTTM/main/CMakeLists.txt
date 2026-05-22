@@ -13,4 +13,5 @@ idf_component_register(
         mqtt           # MQTT client
         nvs_flash      # lưu cấu hình WiFi
         esp_https_ota
+        esp_timer       # sử dụng timer để đọc cảm biến định kỳ
 )
